@@ -1,0 +1,115 @@
+'use strict';
+
+class Model {
+	constructor(properties, options) {
+		Object.keys(properties).forEach(function (prop) {
+			this[prop] = properties[prop];
+		}.bind(this));
+		Object.defineProperty(this, 'connections', {
+			value: {}
+		});
+		if (options) {
+			Object.keys(options).forEach(function (prop) {
+				Object.defineProperty(this, prop, {
+					value: options[prop]
+				});
+			}.bind(this));
+		}
+	}
+
+	toJSON() {
+		var result = {};
+		Object.keys(this).forEach(function (prop) {
+			result[prop] = this[prop];
+		}.bind(this));
+		return result;
+	}
+
+	/**
+	 * возвращает связи. если передан аргумент, то конкретную связь
+	 * @param connName
+	 */
+	conns(connName) {
+		if (this.connections[connName]) {
+			return this.connections[connName];
+		}
+	}
+
+	/**
+	 * возвращает первый объект из связей, если он есть
+	 * @param connName
+	 */
+	conn(connName) {
+		if (this.connections[connName] && this.connections[connName][0]) {
+			return this.connections[connName][0];
+		} else {
+			return false;
+		}
+	}
+
+	validate() {
+	}
+
+	extractConnections() {
+	}
+
+	save() {
+		var model = this;
+		return new Promise(function (resolve, reject) {
+			model.constructor.sync(
+				model.constructor.schema.name,
+				model._id ? 'update' : 'create',
+				model.toJSON()
+			).then(function (result) {
+					Object.keys(result).forEach(function (key) {
+						model[key] = result[key];
+					});
+					resolve(model);
+				}, function (err) {
+					reject(err);
+				});
+		});
+	}
+
+	delete() {
+		return this.constructor.sync(this.constructor.schema.name, 'delete', this.toJSON());
+	}
+
+	static read(where, options, connections) {
+		var This = this;
+		return This.sync(This.schema.name, 'read', {}, where, options, connections).then(function (loaded) {
+			return new Promise(function (resolve, reject) {
+				var models = [];
+				loaded.forEach(function (item) {
+					item = new This(item);
+					item.extractConnections();
+					models.push(item);
+				});
+				resolve(models);
+			});
+		});
+	}
+
+	static sync(collection, method, data, where, options, connections) {
+		return new Promise(function (resolve, reject) {
+			var toSend = {
+				collection: collection,
+				data: data,
+				where: where,
+				options: options,
+				connections: connections
+			};
+			window.socket.emit(method, toSend, function (data) {
+				if (data.hasOwnProperty('error')) {
+					reject(data.error);
+				} else {
+					resolve(data);
+				}
+			});
+		});
+	}
+
+	static get schema() {
+		//TODO в наследуемых объектах надо определять сеттер схемы
+	}
+}
