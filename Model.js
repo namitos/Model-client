@@ -5,9 +5,6 @@ class Model {
 		Object.keys(properties).forEach(function (prop) {
 			this[prop] = properties[prop];
 		}.bind(this));
-		Object.defineProperty(this, 'connections', {
-			value: {}
-		});
 		if (options) {
 			Object.keys(options).forEach(function (prop) {
 				Object.defineProperty(this, prop, {
@@ -51,6 +48,11 @@ class Model {
 	}
 
 	extractConnections() {
+		var connections = this.connections || {};
+		delete this.connections;
+		Object.defineProperty(this, 'connections', {
+			value: connections
+		});
 	}
 
 	save() {
@@ -79,13 +81,13 @@ class Model {
 		var This = this;
 		return This.sync(This.schema.name, 'read', {}, where, options, connections).then(function (loaded) {
 			return new Promise(function (resolve, reject) {
-				var models = [];
-				loaded.forEach(function (item) {
-					item = new This(item);
-					item.extractConnections();
-					models.push(item);
-				});
-				resolve(models);
+				resolve(loaded.map(function (item) {
+					var item = new This(item);
+					if (connections) {
+						item.extractConnections();
+					}
+					return item;
+				}));
 			});
 		});
 	}
@@ -110,6 +112,6 @@ class Model {
 	}
 
 	static get schema() {
-		//TODO в наследуемых объектах надо определять сеттер схемы
+		//TODO в наследуемых объектах надо определять геттер схемы
 	}
 }
