@@ -47,14 +47,6 @@ class Model {
 	validate() {
 	}
 
-	extractConnections() {
-		var connections = this.connections || {};
-		delete this.connections;
-		Object.defineProperty(this, 'connections', {
-			value: connections
-		});
-	}
-
 	save() {
 		var model = this;
 		return new Promise(function (resolve, reject) {
@@ -83,9 +75,15 @@ class Model {
 			return new Promise(function (resolve, reject) {
 				resolve(loaded.map(function (item) {
 					var item = new This(item);
-					if (connections) {
-						item.extractConnections();
+
+					if (item.connections) {
+						var connections = item.connections;
+						delete item.connections;
+						Object.defineProperty(item, 'connections', {
+							value: connections
+						});
 					}
+					
 					return item;
 				}));
 			});
