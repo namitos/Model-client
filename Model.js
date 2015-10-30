@@ -44,9 +44,6 @@ class Model {
 		}
 	}
 
-	validate() {
-	}
-
 	save() {
 		var model = this;
 		return new Promise(function (resolve, reject) {
@@ -65,7 +62,7 @@ class Model {
 		});
 	}
 
-	delete() {
+	'delete'() {
 		return this.constructor.sync(this.constructor.schema.name, 'delete', this.toJSON());
 	}
 
@@ -83,7 +80,7 @@ class Model {
 							value: connections
 						});
 					}
-					
+
 					return item;
 				}));
 			});
@@ -91,6 +88,7 @@ class Model {
 	}
 
 	static sync(collection, method, data, where, options, connections) {
+		var This = this;
 		return new Promise(function (resolve, reject) {
 			var toSend = {
 				collection: collection,
@@ -99,7 +97,7 @@ class Model {
 				options: options,
 				connections: connections
 			};
-			window.socket.emit(method, toSend, function (data) {
+			This.transport.emit(method, toSend, function (data) {
 				if (data.hasOwnProperty('error')) {
 					reject(data.error);
 				} else {
@@ -109,7 +107,12 @@ class Model {
 		});
 	}
 
-	static get schema() {
-		//TODO в наследуемых объектах надо определять геттер схемы
+	static get transport() {
+		return window.socket;
 	}
+
+	static get schema() {
+		//в наследуемых объектах надо определять геттер схемы
+	}
+
 }
