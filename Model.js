@@ -97,7 +97,7 @@ class Model {
 				options: options,
 				connections: connections
 			};
-			This.transport.emit(method, toSend, function (data) {
+			This.transport.emit('data:' + method, toSend, function (data) {
 				if (data.hasOwnProperty('error')) {
 					reject(data.error);
 				} else {
