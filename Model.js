@@ -2,6 +2,7 @@
 
 class Model {
 	constructor(properties, options) {
+		properties = properties || {};
 		Object.keys(properties).forEach(function (prop) {
 			this[prop] = properties[prop];
 		}.bind(this));
@@ -52,18 +53,36 @@ class Model {
 				model._id ? 'update' : 'create',
 				model.toJSON()
 			).then(function (result) {
-					Object.keys(result).forEach(function (key) {
-						model[key] = result[key];
-					});
-					resolve(model);
-				}, function (err) {
-					reject(err);
+				Object.keys(result).forEach(function (key) {
+					model[key] = result[key];
 				});
+				resolve(model);
+			}, function (err) {
+				reject(err);
+			});
 		});
 	}
 
 	'delete'() {
 		return this.constructor.sync(this.constructor.schema.name, 'delete', this.toJSON());
+	}
+
+	/**
+	 * useful wrapper for getting values of deep objects
+	 * @param path
+	 * @returns {*}
+	 */
+	get(path) {
+		return _.get(this, path);
+	}
+
+	/**
+	 * useful wrapper for setting values of deep objects
+	 * @param path
+	 * @returns {Object}
+	 */
+	set(path) {
+		return _.set(this, path);
 	}
 
 	static read(where, options, connections) {
@@ -115,4 +134,33 @@ class Model {
 		//в наследуемых объектах надо определять геттер схемы
 	}
 
+}
+
+class Schema {
+	constructor(schema) {
+		schema = schema || {};
+		Object.keys(schema).forEach(function (prop) {
+			this[prop] = schema[prop];
+		}.bind(this));
+	}
+
+	forEach(fn) {
+		var schema = this;
+		fn(schema);
+		if (schema.type == 'object') {
+			Object.keys(schema.properties).forEach(function (key) {
+				fn(schema.properties[key]);
+			});
+		} else if (schema.type == 'array') {
+			fn(schema.items);
+		}
+	}
+
+	getField(path, property) {
+		var schemaPath = _.flatMap(path.split('.'), function (part) {
+			return ['properties', part];
+		});
+		var field = _.get(this, schemaPath.join('.'));
+		return field && property ? field[property] : field;
+	}
 }
