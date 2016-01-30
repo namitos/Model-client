@@ -1,6 +1,9 @@
 {
-  "name": "Model-client",
-  "version": "0.0.4",
-  "homepage": "https://github.com/namitos/Model-client",
-  "license": "MIT"
+	"name": "Model-client",
+	"version": "0.1.0",
+	"homepage": "https://github.com/namitos/Model-client",
+	"license": "MIT",
+	"dependencies": {
+		"lodash": "4.x"
+	}
 }
