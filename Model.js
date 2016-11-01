@@ -15,7 +15,12 @@ class Model {
 		}
 	}
 
+	/**
+	 * @deprecated
+	 * @returns {{}}
+	 */
 	toJSON() {
+		console.warn('Model.toJSON() deprecated');
 		var result = {};
 		Object.keys(this).forEach((prop) => {
 			result[prop] = this[prop];
@@ -24,20 +29,22 @@ class Model {
 	}
 
 	/**
-	 * возвращает связи. если передан аргумент, то конкретную связь
+	 * @deprecated
 	 * @param connName
 	 */
 	conns(connName) {
+		console.warn('Model.conns() deprecated');
 		if (this.connections[connName]) {
 			return this.connections[connName];
 		}
 	}
 
 	/**
-	 * возвращает первый объект из связей, если он есть
+	 * @deprecated
 	 * @param connName
 	 */
 	conn(connName) {
+		console.warn('Model.conn() deprecated');
 		if (this.connections[connName] && this.connections[connName][0]) {
 			return this.connections[connName][0];
 		} else {
@@ -50,7 +57,7 @@ class Model {
 			this.constructor.sync(
 				this.constructor.schema.name,
 				this._id ? 'update' : 'create',
-				this.toJSON()
+				this
 			).then((result) => {
 				Object.keys(result).forEach((key) => {
 					this[key] = result[key];
@@ -63,11 +70,11 @@ class Model {
 	}
 
 	'delete'() {
-		return this.constructor.sync(this.constructor.schema.name, 'delete', this.toJSON());
+		return this.constructor.sync(this.constructor.schema.name, 'delete', this);
 	}
 
 	/**
-	 * useful wrapper for getting values of deep objects
+	 * useful wrapper for getting deep values
 	 * @param path
 	 * @returns {*}
 	 */
@@ -76,7 +83,7 @@ class Model {
 	}
 
 	/**
-	 * useful wrapper for setting values of deep objects
+	 * useful wrapper for setting deep values
 	 * @param path
 	 * @returns {Object}
 	 */
@@ -86,22 +93,22 @@ class Model {
 
 	static read(where, options, connections) {
 		return this.sync(this.schema.name, 'read', {}, where, options, connections).then((loaded) => {
-			return new Promise((resolve, reject) => {
-				resolve(loaded.map((item) => {
-					var item = new this(item);
-
-					if (item.connections) {
-						var connections = item.connections;
-						delete item.connections;
-						Object.defineProperty(item, 'connections', {
-							value: connections
-						});
-					}
-
-					return item;
-				}));
+			return loaded.map((obj) => {
+				var item = new this(obj);
+				if (item.connections) {
+					var connections = item.connections;
+					delete item.connections;
+					Object.defineProperty(item, 'connections', {
+						value: connections
+					});
+				}
+				return item;
 			});
 		});
+	}
+
+	static count(where) {
+		return this.sync(this.schema.name, 'count', {}, where);
 	}
 
 	static sync(collection, method, data, where, options, connections) {
