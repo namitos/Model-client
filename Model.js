@@ -16,11 +16,9 @@ class Model {
 	}
 
 	/**
-	 * @deprecated
 	 * @returns {{}}
 	 */
 	toJSON() {
-		console.warn('Model.toJSON() deprecated');
 		var result = {};
 		Object.keys(this).forEach((prop) => {
 			result[prop] = this[prop];
@@ -57,7 +55,7 @@ class Model {
 			this.constructor.sync(
 				this.constructor.schema.name,
 				this._id ? 'update' : 'create',
-				this
+				this.toJSON()
 			).then((result) => {
 				Object.keys(result).forEach((key) => {
 					this[key] = result[key];
@@ -95,13 +93,15 @@ class Model {
 		return this.sync(this.schema.name, 'read', {}, where, options, connections).then((loaded) => {
 			return loaded.map((obj) => {
 				var item = new this(obj);
-				if (item.connections) {
-					var connections = item.connections;
-					delete item.connections;
-					Object.defineProperty(item, 'connections', {
-						value: connections
-					});
-				}
+				['connections', 'breadcrumbs'].forEach((key) => {
+					if (item[key]) {
+						var value = item[key];
+						delete item[key];
+						Object.defineProperty(item, key, {
+							value: value
+						});
+					}
+				});
 				return item;
 			});
 		});
