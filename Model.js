@@ -68,7 +68,7 @@ class Model {
 	}
 
 	'delete'() {
-		return this.constructor.sync(this.constructor.schema.name, 'delete', this);
+		return this.constructor.sync(this.constructor.schema.name, 'delete', this.toJSON());
 	}
 
 	/**
